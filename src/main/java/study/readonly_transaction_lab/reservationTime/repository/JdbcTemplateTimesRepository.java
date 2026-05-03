@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -55,7 +56,27 @@ public class JdbcTemplateTimesRepository implements TimesRepository {
     }
 
     @Override
-    public List<TimeEntity> getTimes() {
+    public Optional<TimeEntity> findTimeEntityById(Long id) {
+        String sql = "select * FROM reservation_time WHERE id = ?";
+
+        try {
+            TimeEntity timeEntity = jdbcTemplate.queryForObject(
+                    sql,
+                    (rs, rowNum) -> new TimeEntity(
+                            rs.getLong("id"),
+                            rs.getTime("start_at").toLocalTime()
+                    ),
+                    id
+            );
+
+            return Optional.of(timeEntity);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public List<TimeEntity> findAllTimes() {
         String sql = "SELECT * from reservation_time";
 
         return jdbcTemplate.query(
@@ -66,35 +87,5 @@ public class JdbcTemplateTimesRepository implements TimesRepository {
                                 rs.getTime(START_AT_COLUMN).toLocalTime()
                         )
         );
-    }
-
-    @Override
-    public void deleteTimeById(Long id) {
-        String sql = "DELETE FROM reservation_time WHERE id = ?";
-
-        int affectedRows = jdbcTemplate.update(sql, id);
-        int nonAffectedRowNum = 0;
-
-        if (affectedRows == nonAffectedRowNum) {
-            throw new IllegalArgumentException("해당 시간은 존재하지 않습니다.");
-        }
-    }
-
-    @Override
-    public TimeEntity getTimeEntityById(Long id) {
-        String sql = "select * FROM reservation_time WHERE id = ?";
-
-        try {
-            return jdbcTemplate.queryForObject(
-                    sql,
-                    (rs, rowNum) -> new TimeEntity(
-                            rs.getLong("id"),
-                            rs.getTime("start_at").toLocalTime()
-                    ),
-                    id
-            );
-        } catch (EmptyResultDataAccessException e) {
-            throw new IllegalArgumentException("해당하는 시간이 존재하지 않습니다.");
-        }
     }
 }

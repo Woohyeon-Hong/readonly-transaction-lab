@@ -16,25 +16,27 @@ public class ReservationTimeService {
 
     @Transactional(readOnly = true)
     public TimeInfo findByIdWithReadOnly(Long id) {
-        TimeEntity time = timesRepository.getTimeEntityById(id);
+        TimeEntity time = timesRepository.findTimeEntityById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 예약 시간이 존재하지 않습니다."));
         return TimeInfo.from(time);
     }
 
     public TimeInfo findByIdWithoutTransaction(Long id) {
-        TimeEntity time = timesRepository.getTimeEntityById(id);
+        TimeEntity time = timesRepository.findTimeEntityById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 예약 시간이 존재하지 않습니다."));
         return TimeInfo.from(time);
     }
 
     @Transactional(readOnly = true)
     public List<TimeInfo> findAllWithReadOnly() {
-        return timesRepository.getTimes()
+        return timesRepository.findAllTimes()
                 .stream()
                 .map(TimeInfo::from)
                 .toList();
     }
 
     public  List<TimeInfo> findAllWithoutTransaction() {
-        return timesRepository.getTimes()
+        return timesRepository.findAllTimes()
                 .stream()
                 .map(TimeInfo::from)
                 .toList();

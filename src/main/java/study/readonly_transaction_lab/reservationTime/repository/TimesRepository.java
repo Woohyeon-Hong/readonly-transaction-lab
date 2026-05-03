@@ -1,14 +1,11 @@
 package study.readonly_transaction_lab.reservationTime.repository;
 
 import java.util.List;
+import java.util.Optional;
 import study.readonly_transaction_lab.reservationTime.TimeEntity;
 
 public interface TimesRepository {
     TimeEntity saveTime(TimeEntity entity);
-
-    List<TimeEntity> getTimes();
-
-    void deleteTimeById(Long id);
-
-    TimeEntity getTimeEntityById(Long id);
+    Optional<TimeEntity> findTimeEntityById(Long id);
+    List<TimeEntity> findAllTimes();
 }
