@@ -361,3 +361,53 @@ Java, Spring, JVM 옵션, 로깅 설정에 따라 실행 시간이 달라질 수
 | 2-2 | Spring Data JPA | 예약 시간 정보 조회 | 대량 | off | readOnly 있음 / 없음 |
 | 2-3 | Spring Data JPA | 예약 + 시간 정보 조회 | 단건 | off | readOnly 있음 / 없음 |
 | 2-4 | Spring Data JPA | 예약 + 시간 정보 조회 | 대량 | off | readOnly 있음 / 없음 |
+
+---
+
+## 1차 실험 결과 (JdbcTemplate)
+
+### 시나리오 1-1. 단건 조회 결과
+
+#### readOnly
+
+- avg(ms) = 0.294431174
+- median(ms) = 0.282042
+- min(ms) = 0.197625
+- max(ms) = 2.187833
+- p95(ms) = 0.390542
+
+#### no transaction
+
+- avg(ms) = 0.07263040300000001
+- median(ms) = 0.063958
+- min(ms) = 0.040833
+- max(ms) = 0.460125
+- p95(ms) = 0.118584
+
+결론:
+
+- 단건 조회에서는 no transaction이 readOnly 대비 일관되게 더 빠르게 나타났다.
+- 단순 조회에서는 readOnly 트랜잭션의 시작/종료 부가 비용이 상대적으로 크게 작용할 수 있다.
+
+### 시나리오 1-2. 대량 조회 결과
+
+#### readOnly
+
+- avg(ms) = 25.155393925000002
+- median(ms) = 23.294875
+- min(ms) = 22.082541
+- max(ms) = 105.316667
+- p95(ms) = 32.36
+
+#### no transaction
+
+- avg(ms) = 24.27762814
+- median(ms) = 22.828917
+- min(ms) = 21.457667
+- max(ms) = 151.167375
+- p95(ms) = 30.359583
+
+결론:
+
+- 대량 조회에서도 no transaction이 평균/중간값/p95 기준으로 소폭 우세했다.
+- 다만 두 방식의 차이는 단건 조회에 비해 작으므로, 환경 변화나 반복 측정에 따라 결과가 달라질 여지가 있다.
