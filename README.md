@@ -364,8 +364,6 @@ Java, Spring, JVM 옵션, 로깅 설정에 따라 실행 시간이 달라질 수
 
 ---
 
-## 1차 실험 결과 (JdbcTemplate)
-
 ### 시나리오 1-1. 단건 조회 결과
 
 #### readOnly
