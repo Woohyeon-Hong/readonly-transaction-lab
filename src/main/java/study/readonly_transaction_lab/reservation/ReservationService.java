@@ -1,11 +1,9 @@
 package study.readonly_transaction_lab.reservation;
 
 import java.util.List;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import study.readonly_transaction_lab.reservation.repository.ReservationsRepository;
 
-@Service
 public class ReservationService {
 
     private final ReservationsRepository reservationsRepository;

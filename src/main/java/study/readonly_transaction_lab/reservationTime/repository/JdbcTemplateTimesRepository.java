@@ -14,7 +14,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
 import study.readonly_transaction_lab.reservationTime.TimeEntity;
 
-@Repository
+@Repository("jdbcTemplateTimesRepo")
 public class JdbcTemplateTimesRepository implements TimesRepository {
 
     private static final String ID_COLUMN = "id";

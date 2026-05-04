@@ -1,16 +1,15 @@
 package study.readonly_transaction_lab.reservationTime;
 
 import java.util.List;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import study.readonly_transaction_lab.reservationTime.repository.JdbcTemplateTimesRepository;
+import study.readonly_transaction_lab.reservationTime.repository.TimesRepository;
 
-@Service
 public class ReservationTimeService {
 
-    private final JdbcTemplateTimesRepository timesRepository;
+    private final TimesRepository timesRepository;
 
-    public ReservationTimeService(JdbcTemplateTimesRepository timesRepository) {
+
+    public ReservationTimeService(TimesRepository timesRepository) {
         this.timesRepository = timesRepository;
     }
 

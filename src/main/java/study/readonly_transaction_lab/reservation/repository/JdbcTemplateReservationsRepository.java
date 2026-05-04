@@ -16,7 +16,7 @@ import study.readonly_transaction_lab.reservation.Reservation;
 import study.readonly_transaction_lab.reservation.ReservationEntity;
 import study.readonly_transaction_lab.reservationTime.TimeInfo;
 
-@Repository
+@Repository("jdbcTemplateReservationsRepo")
 public class JdbcTemplateReservationsRepository implements ReservationsRepository {
 
     private static final String RESERVATION_ID_COLUMN = "reservation_id";

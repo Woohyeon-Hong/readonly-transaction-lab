@@ -10,13 +10,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import study.readonly_transaction_lab.reservationTime.JdbcTemplateReservationTimeServiceTest.JdbcConfig;
 import study.readonly_transaction_lab.reservationTime.repository.JdbcTemplateTimesRepository;
+import study.readonly_transaction_lab.reservationTime.repository.TimesRepository;
 
 @SpringBootTest
-
-class ReservationTimeServiceTest {
+@Import(JdbcConfig.class)
+class JdbcTemplateReservationTimeServiceTest {
 
     static int SINGLE_WARM_UP_COUNT = 100;
     static int SINGLE_MEASUREMENT_COUNT = 1000;
@@ -24,6 +30,16 @@ class ReservationTimeServiceTest {
     static int MASS_DATA_COUNT = 50000;
     static int MASS_WARM_UP_COUNT = 10;
     static int MASS_MEASUREMENT_COUNT = 200;
+
+    @TestConfiguration
+    static class JdbcConfig {
+        @Bean
+        ReservationTimeService reservationTimeService(
+                @Qualifier("jdbcTemplateTimesRepo") TimesRepository repo
+        ) {
+            return new ReservationTimeService(repo);
+        }
+    }
 
     @Autowired
     JdbcTemplate jdbcTemplate;
