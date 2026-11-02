@@ -1,7 +1,12 @@
 package study.readonly_transaction_lab.reservationTime;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +16,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import study.readonly_transaction_lab.reservationTime.TransactionQueryStatisticsTest.ServiceConfig;
 import study.readonly_transaction_lab.reservationTime.repository.TimesRepository;
 
@@ -20,19 +26,32 @@ public class TransactionQueryStatisticsTest {
 
     static int SINGLE_MEASUREMENT_COUNT = 1000;
 
+    static final TxState SERVICE_READ_ONLY_TX = new TxState(true, true);
+    static final TxState NO_SERVICE_TX = new TxState(false, false);
+
     @TestConfiguration
     static class ServiceConfig {
 
         @Bean
+        TxRecordingTimesRepository jdbcRecordingRepo(@Qualifier("jdbcTemplateTimesRepo") TimesRepository repo) {
+            return new TxRecordingTimesRepository(repo);
+        }
+
+        @Bean
+        TxRecordingTimesRepository jpaRecordingRepo(@Qualifier("jpaTimesRepo") TimesRepository repo) {
+            return new TxRecordingTimesRepository(repo);
+        }
+
+        @Bean
         ReservationTimeService jdbcReservationTimeService(
-                @Qualifier("jdbcTemplateTimesRepo") TimesRepository repo
+                @Qualifier("jdbcRecordingRepo") TxRecordingTimesRepository repo
         ) {
             return new ReservationTimeService(repo);
         }
 
         @Bean
         ReservationTimeService jpaReservationTimeService(
-                @Qualifier("jpaTimesRepo") TimesRepository repo
+                @Qualifier("jpaRecordingRepo") TxRecordingTimesRepository repo
         ) {
             return new ReservationTimeService(repo);
         }
@@ -49,6 +68,20 @@ public class TransactionQueryStatisticsTest {
     @Qualifier("jpaReservationTimeService")
     ReservationTimeService jpaReservationTimeService;
 
+    @Autowired
+    @Qualifier("jdbcRecordingRepo")
+    TxRecordingTimesRepository jdbcRecordingRepo;
+
+    @Autowired
+    @Qualifier("jpaRecordingRepo")
+    TxRecordingTimesRepository jpaRecordingRepo;
+
+    @BeforeEach
+    void setUp() {
+        jdbcRecordingRepo.states.clear();
+        jpaRecordingRepo.states.clear();
+    }
+
     @DisplayName("보조 실험. readOnly 트랜잭션에서 DB에 전달되는 쿼리 통계를 확인한다.")
     @Test
     void readOnly_트랜잭션_단건_조회_쿼리_통계를_확인한다() {
@@ -60,6 +93,10 @@ public class TransactionQueryStatisticsTest {
         }
 
         stopGeneralLog();
+
+        assertThat(jdbcRecordingRepo.states)
+                .hasSize(SINGLE_MEASUREMENT_COUNT)
+                .containsOnly(SERVICE_READ_ONLY_TX);
 
         printQueryStatistics();
     }
@@ -77,6 +114,10 @@ public class TransactionQueryStatisticsTest {
 
         stopGeneralLog();
 
+        assertThat(jdbcRecordingRepo.states)
+                .hasSize(SINGLE_MEASUREMENT_COUNT)
+                .containsOnly(NO_SERVICE_TX);
+
         printQueryStatistics();
     }
 
@@ -92,6 +133,10 @@ public class TransactionQueryStatisticsTest {
         }
 
         stopGeneralLog();
+
+        assertThat(jpaRecordingRepo.states)
+                .hasSize(SINGLE_MEASUREMENT_COUNT)
+                .containsOnly(SERVICE_READ_ONLY_TX);
 
         printQueryStatistics();
     }
@@ -142,5 +187,38 @@ public class TransactionQueryStatisticsTest {
     }
 
     private record QueryStatistic(String argument, long count) {
+    }
+
+    record TxState(boolean active, boolean readOnly) {
+    }
+
+    static class TxRecordingTimesRepository implements TimesRepository {
+
+        final List<TxState> states = new ArrayList<>();
+        private final TimesRepository delegate;
+
+        TxRecordingTimesRepository(TimesRepository delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public TimeEntity saveTime(TimeEntity entity) {
+            return delegate.saveTime(entity);
+        }
+
+        @Override
+        public Optional<TimeEntity> findTimeEntityById(Long id) {
+            states.add(new TxState(
+                    TransactionSynchronizationManager.isActualTransactionActive(),
+                    TransactionSynchronizationManager.isCurrentTransactionReadOnly()
+            ));
+
+            return delegate.findTimeEntityById(id);
+        }
+
+        @Override
+        public List<TimeEntity> findAllTimes() {
+            return delegate.findAllTimes();
+        }
     }
 }
