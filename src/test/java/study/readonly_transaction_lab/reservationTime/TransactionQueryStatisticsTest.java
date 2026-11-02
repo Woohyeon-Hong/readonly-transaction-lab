@@ -7,21 +7,47 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
-import study.readonly_transaction_lab.reservationTime.repository.JdbcTemplateTimesRepository;
+import study.readonly_transaction_lab.reservationTime.TransactionQueryStatisticsTest.ServiceConfig;
 import study.readonly_transaction_lab.reservationTime.repository.TimesRepository;
 
 @SpringBootTest
+@Import(ServiceConfig.class)
 public class TransactionQueryStatisticsTest {
 
     static int SINGLE_MEASUREMENT_COUNT = 1000;
+
+    @TestConfiguration
+    static class ServiceConfig {
+
+        @Bean
+        ReservationTimeService jdbcReservationTimeService(
+                @Qualifier("jdbcTemplateTimesRepo") TimesRepository repo
+        ) {
+            return new ReservationTimeService(repo);
+        }
+
+        @Bean
+        ReservationTimeService jpaReservationTimeService(
+                @Qualifier("jpaTimesRepo") TimesRepository repo
+        ) {
+            return new ReservationTimeService(repo);
+        }
+    }
 
     @Autowired
     JdbcTemplate jdbcTemplate;
 
     @Autowired
-    @Qualifier("jpaTimesRepo")
-    TimesRepository jpaTimeRepository;
+    @Qualifier("jdbcReservationTimeService")
+    ReservationTimeService jdbcReservationTimeService;
+
+    @Autowired
+    @Qualifier("jpaReservationTimeService")
+    ReservationTimeService jpaReservationTimeService;
 
     @DisplayName("보조 실험. readOnly 트랜잭션에서 DB에 전달되는 쿼리 통계를 확인한다.")
     @Test
@@ -29,11 +55,8 @@ public class TransactionQueryStatisticsTest {
         prepareTestData();
         startGeneralLog();
 
-        ReservationTimeService reservationTimeService =
-                new ReservationTimeService(new JdbcTemplateTimesRepository(jdbcTemplate));
-
         for (int i = 0; i < SINGLE_MEASUREMENT_COUNT; i++) {
-            reservationTimeService.findByIdWithReadOnly(1L);
+            jdbcReservationTimeService.findByIdWithReadOnly(1L);
         }
 
         stopGeneralLog();
@@ -48,11 +71,8 @@ public class TransactionQueryStatisticsTest {
 
         startGeneralLog();
 
-        ReservationTimeService reservationTimeService =
-                new ReservationTimeService(new JdbcTemplateTimesRepository(jdbcTemplate));
-
         for (int i = 0; i < SINGLE_MEASUREMENT_COUNT; i++) {
-            reservationTimeService.findByIdWithoutTransaction(1L);
+            jdbcReservationTimeService.findByIdWithoutTransaction(1L);
         }
 
         stopGeneralLog();
@@ -67,11 +87,8 @@ public class TransactionQueryStatisticsTest {
 
         startGeneralLog();
 
-        ReservationTimeService reservationTimeService =
-                new ReservationTimeService(jpaTimeRepository);
-
         for (int i = 0; i < SINGLE_MEASUREMENT_COUNT; i++) {
-            reservationTimeService.findByIdWithReadOnly(1L);
+            jpaReservationTimeService.findByIdWithReadOnly(1L);
         }
 
         stopGeneralLog();
